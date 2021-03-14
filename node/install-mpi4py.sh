@@ -14,9 +14,9 @@ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 2
 # Install mpi4py from source to avoid clashes with MPICH2
 mpi4py="mpi4py-3.0.3"
 
-wget -N "https://bitbucket.org/mpi4py/mpi4py/downloads/${mpi4py}.tar.gz"
+sudo wget -N "https://bitbucket.org/mpi4py/mpi4py/downloads/${mpi4py}.tar.gz"
 
-tar -xzf "${mpi4py}.tar.gz"
+sudo tar -xzf "${mpi4py}.tar.gz"
 
 sudo apt-get update --fix-missing
 
