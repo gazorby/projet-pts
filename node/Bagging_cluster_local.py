@@ -4,25 +4,9 @@ from csv import reader
 from math import floor
 from random import randrange, shuffle
 
-from mpi4py import MPI
-
-mpi_comm = MPI.COMM_WORLD
-mpi_rank = mpi_comm.Get_rank()
-mpi_size = mpi_comm.Get_size()
-
 
 def main(filename: str, n_trees: int, with_root: bool):
-    if mpi_size == 1:
-        print("WARNING: There is only one node")
-        return 1
-
-    if mpi_size >= 1000 and mpi_rank == 0:
-        print("WARNING: Your world size is {}, it's so big".format(mpi_size))
-
-    if mpi_rank == 0:
-        return mpi_root(filename, n_trees, with_root)
-    else:
-        return mpi_nonroot()
+    return mpi_root(filename, n_trees, with_root)
 
 
 ##################################################################################################################################
@@ -231,25 +215,10 @@ def mpi_root(filename: str, n_trees: int, with_root: bool = True):
     train, test = formate_dataset(list(dataset), 0.2)
 
     data = [train, 6, 2, 0.5, n_trees]
-    trees = []
-
-    log(f"size: {mpi_size}")
 
     start_time = time.time()
 
-    for i in range(1, mpi_size):
-        log(f"sending data to node {i}")
-        mpi_comm.send(data, dest=i, tag=9)
-    log("dataset has been sent to all the nodes")
-
-    # build trees from root
-    if with_root:
-        trees.extend(bagging(*data))
-
-    for i in range(1, mpi_size):
-        log(f"receiving trees from node {i}")
-        trees.extend(mpi_comm.recv(source=i, tag=11))
-    log("trees are back")
+    trees = bagging(*data)
 
     accuracy, _ = evaluate_algorithm(train, test, trees)
 
@@ -261,17 +230,8 @@ def mpi_root(filename: str, n_trees: int, with_root: bool = True):
 
 
 def log(msg: str) -> None:
-    print(f"[{mpi_comm.rank}] - {msg}")
+    print(f"[info] - {msg}")
 
-
-
-def mpi_nonroot():
-    # Ce que font les autres nodes
-    data = mpi_comm.recv(source=0, tag=9)
-    log("dataset received")
-    trees = bagging(*data)
-    mpi_comm.send(trees, dest=0, tag=11)
-    log("sending the trees back")
 
 
 if __name__ == "__main__":

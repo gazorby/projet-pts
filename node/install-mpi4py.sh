@@ -25,3 +25,5 @@ sudo apt-get install python3-dev
 cd "$mpi4py" \
     && sudo python setup.py build --mpicc=/usr/local/mpich2/bin/mpicc \
     && sudo python setup.py install
+
+sudo rm -rf "$mpi4py" "${mpi4py}.tar.gz"

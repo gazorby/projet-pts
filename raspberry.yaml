@@ -1,0 +1,33 @@
+--- # Ansible Playbook to configure a set of Raspberry PIs in a consistent and repeatable way
+# ansible-playbook raspberry.yaml
+- hosts: raspberry
+  remote_user: pi
+  vars:
+    src_dir: "{{ playbook_dir }}"
+    mode: u=rwx
+    ansible_user: pi
+    ansible_password: raspberry
+  vars_files:
+    - "{{ src_dir }}/conf/raspberry-config.yml"
+  tasks:
+    - name: Install ARP-SCAN
+      apt:
+        name: arp-scan
+      become: yes
+    - name: Install sshpass
+      apt:
+        name: sshpass
+      become: yes
+    - name: Transfer directory
+      copy: src=node dest=/home/pi mode=0777
+    - name: Add current RPI IP to hostfile
+      shell: hostname -i | awk '{print $1}' > node/hostfile # Add the root node ip to the hostfile
+    - name: List all RPI of the Network
+      become: yes
+      shell: arp-scan --localnet --retry 9 | grep "Raspberry Pi" | awk '{print $1}' >> node/hostfile # generate a hostfile with all pi addresses
+    - name: Setup SSH
+      command: node/setup-ssh.sh node/hostfile
+    - name: Install mpi4py
+      command: node/install-mpi4py.sh
+    - name: Run Python script
+      command: mpiexec -n 4 --hostfile node/hostfile python node/Bagging_cluster.py --file node/sonar.all-data --trees 15 --root # run the bagging algorithm on the cluster
